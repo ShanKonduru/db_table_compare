@@ -4,6 +4,12 @@ import os
 # Add the parent directory to sys.path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
+import logging
+from src.utils.logger_setup import LoggerSetup
+
+# Initialize logger once at program start
+LoggerSetup.initialize_logger('.//logs//db_compare_log.log', logging.INFO)
+
 # Initialize comparer
 from src.utils.excel_comparer import ExcelComparer
 from src.utils.html_report import HtmlReport

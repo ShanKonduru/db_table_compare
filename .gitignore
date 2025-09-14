@@ -1,5 +1,7 @@
 test_reports/
 outputs/
+logs/
+
 
 
 # Byte-compiled / optimized / DLL files
