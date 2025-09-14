@@ -50,8 +50,25 @@ generate_large_excel(source_path, number_of_rows, 37)  # 10k rows
 logger.info("Generating target Excel file with some variations")
 generate_large_excel(target_path, number_of_rows, 12)  # 10k rows with some variations
 
-PerformanceMetrics.start("Excel_2_Excel_Comparison")
+def create_variations(target_file, original_df):
+    df = original_df.copy()
+    # Randomly drop 5% of the rows to test missing data detection
+    drop_indices = np.random.choice(df.index, size=int(0.05 * len(df)), replace=False)
+    df.drop(index=drop_indices, inplace=True)
+    # Randomly change some values
+    num_changes = int(0.02 * len(df))
+    change_indices = np.random.choice(df.index, size=num_changes, replace=False)
+    df.loc[change_indices, 'Age'] = np.random.randint(20, 70, size=num_changes)
+    df.to_excel(target_file, index=False, sheet_name='Sheet1')
 
+# Generate varied target data
+original_target_df = pd.read_excel(target_path, sheet_name='Sheet1')
+target_path_variation = 'DATA\\EXEL_TO_EXCEL\\tgt_varied.xlsx'
+logger.info("Generating target Excel file with variations")
+create_variations(target_path_variation, original_target_df)
+target_path = target_path_variation
+
+PerformanceMetrics.start("Excel_2_Excel_Comparison")
 PerformanceMetrics.start("excel_load")
 logger.info("Loading Excel files for comparison")
 comparer = ExcelComparer(
