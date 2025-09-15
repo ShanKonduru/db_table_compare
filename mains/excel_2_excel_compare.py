@@ -191,20 +191,20 @@ if __name__ == "__main__":
     
     # Generate source and target files with unique seeds to ensure differences
     # These lines are crucial for creating the data the script will compare.
-    logger.info("Generating source and target Excel files.")
-    seed_source = 37
-    generate_large_excel(source_path, number_of_rows, seed=seed_source)
+    # logger.info("Generating source and target Excel files.")
+    # seed_source = 37
+    # generate_large_excel(source_path, number_of_rows, seed=seed_source)
     
     # To test the "no differences" scenario, use the same seed for both files.
     # To test the "differences" scenario, use different seeds.
-    seed_target = 37 # Change this to 12 or any other number to introduce differences
-    generate_large_excel(target_path, number_of_rows, seed=seed_target)
+    # seed_target = 37 # Change this to 12 or any other number to introduce differences
+    # generate_large_excel(target_path, number_of_rows, seed=seed_target)
     
     # Uncomment the following lines to introduce specific variations
     # (dropped rows, changed values) for testing.
     # Read the original target data and create a new varied version for testing
-    original_target_df = pd.read_excel(target_path, sheet_name='Sheet1')
-    create_variations(target_path_variation, original_target_df)
+    # original_target_df = pd.read_excel(target_path, sheet_name='Sheet1')
+    # create_variations(target_path_variation, original_target_df)
     
     # Use the varied file for the comparison if the variation section is active.
     target_path = target_path_variation
