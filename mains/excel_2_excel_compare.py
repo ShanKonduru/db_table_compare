@@ -1,3 +1,4 @@
+from datetime import datetime
 import sys
 import os
 import logging
@@ -113,6 +114,28 @@ def create_variations(target_file, original_df):
     df.to_excel(target_file, index=False, sheet_name='Sheet1')
     logger.info(f"Varied Excel file {target_file} generated successfully.")
 
+
+def generate_html_report_file_name(filename='comparison_report.html'):
+    # Extract directory and filename
+    logger.info("Saving report with timestamped filename.")
+    dir_name = os.path.dirname(filename)
+    base_name = os.path.basename(filename)
+    # Generate timestamp
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    # Append timestamp before extension
+    name, ext = os.path.splitext(base_name)
+    new_filename = f"{name}_{timestamp}{ext}"
+    full_path = os.path.join(dir_name, new_filename)
+
+    # Ensure directory exists
+    if dir_name:
+        logger.info("Ensuring output directory exists.")
+        os.makedirs(dir_name, exist_ok=True)
+
+    logger.info(f"Report saved to {full_path}")
+    return full_path
+    
+
 def run_comparison_and_report(source_path, target_path):
     """
     Executes the main comparison logic and generates an HTML report.
@@ -146,13 +169,16 @@ def run_comparison_and_report(source_path, target_path):
     report = HtmlReport(
         comparison_df,
         comparer.source_df,
-        comparer.target_df
+        comparer.target_df,
+        source_file=source_path,
+        target_file=target_path
     )
     PerformanceMetrics.stop("create_report")
     
     PerformanceMetrics.start("save_report")
     logger.info("Saving HTML report to file.")
-    report.save('c:/MyProjects/db_table_compare/src/outputs/exl_2_exl_comparison_report.html')
+    html_report_file_name = generate_html_report_file_name(filename='c:/MyProjects/db_table_compare/src/outputs/exl_2_exl_comparison_report.html')
+    report.generate_and_save_report(html_report_file_name)
     PerformanceMetrics.stop("save_report")
     
     PerformanceMetrics.stop("Excel_2_Excel_Comparison")
@@ -164,16 +190,23 @@ if __name__ == "__main__":
     logger, number_of_rows, source_path, target_path, target_path_variation = setup_environment()
     
     # Generate source and target files with unique seeds to ensure differences
+    # These lines are crucial for creating the data the script will compare.
     logger.info("Generating source and target Excel files.")
-    seed = 37
-    generate_large_excel(source_path, number_of_rows, seed=seed)
-    generate_large_excel(target_path, number_of_rows, seed=seed)
+    seed_source = 37
+    generate_large_excel(source_path, number_of_rows, seed=seed_source)
     
+    # To test the "no differences" scenario, use the same seed for both files.
+    # To test the "differences" scenario, use different seeds.
+    seed_target = 37 # Change this to 12 or any other number to introduce differences
+    generate_large_excel(target_path, number_of_rows, seed=seed_target)
+    
+    # Uncomment the following lines to introduce specific variations
+    # (dropped rows, changed values) for testing.
     # Read the original target data and create a new varied version for testing
     original_target_df = pd.read_excel(target_path, sheet_name='Sheet1')
     create_variations(target_path_variation, original_target_df)
     
-    # Use the varied file for the comparison
+    # Use the varied file for the comparison if the variation section is active.
     target_path = target_path_variation
     
     # Run the comparison and generate the final report
