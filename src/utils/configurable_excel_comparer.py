@@ -51,45 +51,40 @@ class ConfigurableExcelComparer:
             logger.info("DataFrames loaded and column names normalized. Starting preprocessing...")
             
             # --- Step 1: Initialize standardized DataFrames ---
-            # These DataFrames will hold only the columns to be compared, with standardized names.
             standardized_source = pd.DataFrame()
             standardized_target = pd.DataFrame()
             
             # --- Step 2: Process the column mapping and build standardized DataFrames ---
             for src_col_key, attributes in self.column_mapping.items():
-                src_col_norm = src_col_key.lower() # Normalize source column name from mapping
+                src_col_norm = src_col_key.lower()
                 target_col_key = attributes.get("target")
-                target_col_norm = target_col_key.lower() if target_col_key else None # Normalize target column name
+                target_col_norm = target_col_key.lower() if target_col_key else None
 
-                # Identify the key column using the normalized name
                 if attributes.get("is_key"):
                     self.key_column = src_col_norm
                 
-                # Handle mapped columns
                 if target_col_norm:
                     if src_col_norm in self.source_df.columns and target_col_norm in self.target_df.columns:
-                        # Add and rename columns in standardized DataFrames
-                        # The new column name will be the normalized source column name
                         standardized_source[src_col_norm] = self.source_df[src_col_norm]
                         standardized_target[src_col_norm] = self.target_df[target_col_norm]
                         
-                        # Apply data type conversion
                         data_type = attributes.get("type")
                         if data_type == 'int':
                             standardized_source[src_col_norm] = pd.to_numeric(standardized_source[src_col_norm], errors='coerce').fillna(-1).astype(int)
                             standardized_target[src_col_norm] = pd.to_numeric(standardized_target[src_col_norm], errors='coerce').fillna(-1).astype(int)
                         elif data_type == 'datetime':
+                            # Use 'errors=coerce' for robustness
                             standardized_source[src_col_norm] = pd.to_datetime(standardized_source[src_col_norm], errors='coerce', format=attributes.get("format"))
                             standardized_target[src_col_norm] = pd.to_datetime(standardized_target[src_col_norm], errors='coerce', format=attributes.get("format"))
                     else:
                         logger.warning(f"Mapped column '{src_col_key}' (src) or '{target_col_key}' (tgt) not found in respective files. Skipping.")
-                else: # Handle source-only columns
+                else:
                     if src_col_norm in self.source_df.columns:
                         standardized_source[src_col_norm] = self.source_df[src_col_norm]
                     else:
                         logger.warning(f"Source-only column '{src_col_key}' not found in the source file. Skipping.")
 
-            # --- Step 3: Identify unmapped columns in both dataframes ---
+            # --- Step 3: Identify unmapped columns ---
             self.source_unmapped_cols = list(set(self.source_df.columns) - set(standardized_source.columns))
             self.target_unmapped_cols = list(set(self.target_df.columns) - set(standardized_target.columns))
 
@@ -104,7 +99,7 @@ class ConfigurableExcelComparer:
         except KeyError as e:
             logger.error(f"Column missing in DataFrame: {e}")
             raise
-                    
+                            
     def compare(self):
         """
         Performs the comparison by first preprocessing the data, then merging.

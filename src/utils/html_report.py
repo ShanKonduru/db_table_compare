@@ -12,13 +12,13 @@ class HtmlReport:
     The report includes a summary of differences and a detailed breakdown
     of row-level and column-level discrepancies.
     """
-    def __init__(self, comparison_df, source_df, target_df, source_file, target_file,key_column):
+    def __init__(self, comparison_df, source_df, target_df, source_file, target_file, key_column):
         """
         Initializes the HtmlReport with comparison dataframes and file paths.
 
         Args:
             comparison_df (pd.DataFrame): The DataFrame resulting from a pandas merge
-                                         with an indicator column.
+                                          with an indicator column.
             source_df (pd.DataFrame): The original source DataFrame.
             target_df (pd.DataFrame): The original target DataFrame.
             source_file (str): The path to the source file.
@@ -30,19 +30,13 @@ class HtmlReport:
         self.target_df = target_df
         self.source_file = source_file
         self.target_file = target_file
-        self.html = ""
-        self.key = 'ID'
+        # CRITICAL FIX: The key is now a variable passed from the comparer
+        self.key = key_column
         logger.info("HtmlReport instance created.")
 
     def generate_summary(self):
         """
         Generates the summary section of the HTML report.
-
-        This section provides a high-level overview of the comparison results,
-        including row counts and a breakdown of matching and differing rows.
-
-        Returns:
-            str: The HTML string for the summary section.
         """
         src_only = self.df[self.df['_merge'] == 'left_only']
         tgt_only = self.df[self.df['_merge'] == 'right_only']
@@ -78,18 +72,11 @@ class HtmlReport:
     def _get_mismatched_rows(self, both_rows):
         """
         Helper method to identify rows with data differences.
-
-        Args:
-            both_rows (pd.DataFrame): The DataFrame containing rows present in both sources.
-
-        Returns:
-            pd.DataFrame: A DataFrame with only the rows that have data mismatches.
         """
         if both_rows.empty:
             return both_rows
 
-        # Ensure we are using the correct column names from the dataframes
-        # The key column and merged columns are already in a standard format
+        # CRITICAL FIX: Use the normalized key column for exclusion
         common_cols = [col for col in both_rows.columns if not col.endswith('_src') and not col.endswith('_tgt') and col != self.key and col != '_merge']
         
         # Check for differences in common columns
@@ -97,6 +84,7 @@ class HtmlReport:
         for index, row in both_rows.iterrows():
             is_mismatched = False
             for col in common_cols:
+                # Use .get() for safety
                 src_val = row.get(f'{col}_src')
                 tgt_val = row.get(f'{col}_tgt')
                 
@@ -113,9 +101,6 @@ class HtmlReport:
     def _is_identical(self):
         """
         Checks if the source and target dataframes are identical.
-
-        Returns:
-            bool: True if the files are identical, False otherwise.
         """
         src_only_count = len(self.df[self.df['_merge'] == 'left_only'])
         tgt_only_count = len(self.df[self.df['_merge'] == 'right_only'])
@@ -127,19 +112,14 @@ class HtmlReport:
     def generate_details(self):
         """
         Generates the detailed section of the HTML report.
-
-        This section provides a categorized breakdown of all differences found.
-
-        Returns:
-            str: The HTML string for the detailed section.
         """
         details_html = '<h3>Details</h3>'
         
-        # Check for no differences
         if self._is_identical():
             details_html += '<p>Both files are identical.</p>'
             return details_html
 
+        # CRITICAL FIX: Use the normalized key column for all lookups
         # Category 1: Rows only in source
         src_only = self.source_df[~self.source_df[self.key].isin(self.target_df[self.key])]
         if not src_only.empty:
@@ -160,27 +140,19 @@ class HtmlReport:
         if not mismatched_rows.empty:
             details_html += '<details open><summary><strong>Data mismatches in common rows</strong> ({})</summary>'.format(len(mismatched_rows))
             
-            # Highlight differences in the table
-            def highlight_diffs(row):
-                styles = [''] * len(row)
-                common_cols = [col for col in self.source_df.columns if col != self.key and col in self.target_df.columns]
-                for i, col in enumerate(common_cols):
-                    src_val = row.get(f'{col}_src')
-                    tgt_val = row.get(f'{col}_tgt')
-                    if pd.notna(src_val) or pd.notna(tgt_val):
-                        if not (pd.isna(src_val) and pd.isna(tgt_val)) and (src_val != tgt_val):
-                            styles[i+1] = 'background-color: #f8d7da;'
-                return styles
-
+            # Highlight differences in the table (This inner function is not needed if you format the HTML string)
+            # The logic below will build the table correctly
+            
             # Create a combined dataframe for a clear side-by-side view
             combined_diff_df = pd.DataFrame()
             if self.key in mismatched_rows.columns:
                 combined_diff_df[self.key] = mismatched_rows[self.key]
             
+            # CRITICAL FIX: This part was wrong. It should iterate over the normalized columns
             for col in self.source_df.columns:
                 if col != self.key:
-                    combined_diff_df[f'{col}_source'] = mismatched_rows[f'{col}_src']
-                    combined_diff_df[f'{col}_target'] = mismatched_rows[f'{col}_tgt']
+                    combined_diff_df[f'{col}_source'] = mismatched_rows.get(f'{col}_src')
+                    combined_diff_df[f'{col}_target'] = mismatched_rows.get(f'{col}_tgt')
 
             # Use a more detailed approach for table generation if needed
             html_table = combined_diff_df.to_html(index=False)
@@ -205,9 +177,6 @@ class HtmlReport:
     def generate_and_save_report(self, filename):
         """
         Generates the complete HTML report and saves it to a file.
-
-        Args:
-            filename (str): The path to save the HTML report file.
         """
         logger.info("Generating and saving report to file.")
         
