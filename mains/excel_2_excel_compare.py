@@ -25,7 +25,7 @@ def setup_environment():
     logger.info("Starting Excel to Excel comparison process.")
     
     # Define file paths and number of rows
-    number_of_rows = 100000  # A more manageable number for demonstration
+    number_of_rows = 1000000  # A more manageable number for demonstration
     source_path = 'DATA\\EXEL_TO_EXCEL\\src.xlsx'
     target_path = 'DATA\\EXEL_TO_EXCEL\\tgt.xlsx'
     target_path_variation = 'DATA\\EXEL_TO_EXCEL\\tgt_varied.xlsx'
