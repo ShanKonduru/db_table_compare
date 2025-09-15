@@ -165,8 +165,9 @@ if __name__ == "__main__":
     
     # Generate source and target files with unique seeds to ensure differences
     logger.info("Generating source and target Excel files.")
-    generate_large_excel(source_path, number_of_rows, seed=37)
-    generate_large_excel(target_path, number_of_rows, seed=12)
+    seed = 37
+    generate_large_excel(source_path, number_of_rows, seed=seed)
+    generate_large_excel(target_path, number_of_rows, seed=seed)
     
     # Read the original target data and create a new varied version for testing
     original_target_df = pd.read_excel(target_path, sheet_name='Sheet1')
