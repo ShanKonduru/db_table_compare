@@ -12,7 +12,7 @@ class HtmlReport:
     The report includes a summary of differences and a detailed breakdown
     of row-level and column-level discrepancies.
     """
-    def __init__(self, comparison_df, source_df, target_df, source_file, target_file):
+    def __init__(self, comparison_df, source_df, target_df, source_file, target_file,key_column):
         """
         Initializes the HtmlReport with comparison dataframes and file paths.
 
@@ -23,6 +23,7 @@ class HtmlReport:
             target_df (pd.DataFrame): The original target DataFrame.
             source_file (str): The path to the source file.
             target_file (str): The path to the target file.
+            key_column (str): The key column name used for the comparison.
         """
         self.df = comparison_df
         self.source_df = source_df
@@ -87,7 +88,9 @@ class HtmlReport:
         if both_rows.empty:
             return both_rows
 
-        common_cols = [col for col in self.source_df.columns if col != self.key and col in self.target_df.columns]
+        # Ensure we are using the correct column names from the dataframes
+        # The key column and merged columns are already in a standard format
+        common_cols = [col for col in both_rows.columns if not col.endswith('_src') and not col.endswith('_tgt') and col != self.key and col != '_merge']
         
         # Check for differences in common columns
         mismatched_indices = []
